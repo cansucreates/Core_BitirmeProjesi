@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Core_BitirmeProjesi.Controllers
 {
@@ -17,52 +20,18 @@ namespace Core_BitirmeProjesi.Controllers
             _context = context;
         }
 
-        // kullanıcı giriş işlemleri
-        public IActionResult Giris()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult Giris(User user, string ReturnUrl)
-        {
-            var login = _context.Users.Where(x => x.Username == user.Username && x.Password == user.Password).FirstOrDefault();
-
-            if (login != null)
-            {
-                var talep = new List<Claim>()
-                {
-                    new Claim(ClaimTypes.Name, user.Username.ToString())
-                };
-
-                ClaimsIdentity kimlik = new ClaimsIdentity(talep, "Login");
-                ClaimsPrincipal kural = new ClaimsPrincipal(kimlik);
-
-                HttpContext.SignInAsync(kural);
-                if (!string.IsNullOrEmpty(ReturnUrl))
-                {
-                    return Redirect(ReturnUrl);
-                }
-                else
-                {
-                    return RedirectToAction("Index", "Home");
-                }
-            }
-            return View();
-        }
-
-        public IActionResult Cikis()
-        {
-            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Giris", "Home");
-        }
-
-
         public IActionResult Index()
         {
             return View();
         }
 
+        public IActionResult ListBooks()
+        {
+            var books = _context.Books.Include(b => b.Author).ToList(); 
+            return View(books);
+        }
+
+        // Privacy page
         public IActionResult Privacy()
         {
             return View();
