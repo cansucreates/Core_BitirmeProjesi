@@ -1,0 +1,45 @@
+﻿@model IEnumerable<Core_BitirmeProjesi.Models.Author>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Yazarlar</h1>
+
+<p>
+    <a asp-action="Create">Yazar Ekle</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.AuthorID">Güncelle</a> |
+                <a asp-action="Details" asp-route-id="@item.AuthorID">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.AuthorID">Sil</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <a href="/Books/Index" class="btn btn-primary p-2 m-2">Kitap İşlemleri</a>
+        </div>
+    </div>
+</div>
+

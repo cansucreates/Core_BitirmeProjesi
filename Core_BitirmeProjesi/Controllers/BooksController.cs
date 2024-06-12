@@ -1,181 +1,74 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Core_BitirmeProjesi.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Core_BitirmeProjesi.Data;
 using Core_BitirmeProjesi.Models;
 
 namespace Core_BitirmeProjesi.Controllers
 {
     public class BooksController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _db;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(ApplicationDbContext db)
         {
-            _context = context;
+            _db = db; 
         }
 
-        // GET: Books
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var applicationDbContext = _context.Books.Include(b => b.Author);
-            return View(await applicationDbContext.ToListAsync());
+            return View(_db.Books.ToList());
         }
 
-        // GET: Books/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null || _context.Books == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .Include(b => b.Author)
-                .FirstOrDefaultAsync(m => m.BookID == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            return View(book);
-        }
-
-        // GET: Books/Create
+        //Kaydetme işlemi 
         public IActionResult Create()
         {
-            var authors = _context.Authors.ToList();
-            if (authors == null || !authors.Any())
-            {
-                TempData["ErrorMessage"] = "No authors available. Please add authors first.";
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AuthorID"] = new SelectList(authors, "AuthorID", "Name");
+            List<SelectListItem> authorid_liste = (from x in _db.Authors
+                                                select new SelectListItem
+                                                {
+                                                    Value = x.AuthorID.ToString(),
+                                                    Text = x.Name
+                                                }).ToList();
+            ViewBag.AuthorID = authorid_liste;
             return View();
         }
 
-        // POST: Books/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BookID,Title,PublishedDate,AuthorID")] Book book)
+        public IActionResult Create(Book books)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(book);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Book created successfully!";
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AuthorID"] = new SelectList(_context.Authors, "AuthorID", "Name", book.AuthorID);
-            TempData["ErrorMessage"] = "Failed to create book. Please check the details and try again.";
-            return View(book);
+            _db.Books.Add(books);
+            _db.SaveChanges();
+            return RedirectToAction("Index");
         }
 
-        // GET: Books/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        //Güncelleme işlemi
+        public IActionResult Edit(int id)
         {
-            if (id == null || _context.Books == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books.FindAsync(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-            var authors = _context.Authors.ToList();
-            if (authors == null || !authors.Any())
-            {
-                TempData["ErrorMessage"] = "No authors available. Please add authors first.";
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AuthorID"] = new SelectList(authors, "AuthorID", "Name", book.AuthorID);
-            return View(book);
+            List<SelectListItem> authorid_liste = (from x in _db.Authors
+                                                select new SelectListItem
+                                                {
+                                                    Value = x.AuthorID.ToString(),
+                                                    Text = x.Name
+                                                }).ToList();
+            ViewBag.AuthorID = authorid_liste;
+            return View(_db.Books.Find(id));
         }
 
-        // POST: Books/Edit/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BookID,Title,PublishedDate,AuthorID")] Book book)
+        public IActionResult Edit(int id, Book books)
         {
-            if (id != book.BookID)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(book);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Book updated successfully!";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BookExists(book.BookID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AuthorID"] = new SelectList(_context.Authors, "AuthorID", "Name", book.AuthorID);
-            TempData["ErrorMessage"] = "Failed to update book. Please check the details and try again.";
-            return View(book);
+            _db.Books.Update(books);
+            _db.SaveChanges();
+            return RedirectToAction("Index");
         }
 
-        // GET: Books/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        // Silme işlemi (direk butonla silinecek)
+        public IActionResult Delete(int id)
         {
-            if (id == null || _context.Books == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .Include(b => b.Author)
-                .FirstOrDefaultAsync(m => m.BookID == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            return View(book);
-        }
-
-        // POST: Books/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            if (_context.Books == null)
-            {
-                return Problem("Entity set 'ApplicationDbContext.Books'  is null.");
-            }
-            var book = await _context.Books.FindAsync(id);
-            if (book != null)
-            {
-                _context.Books.Remove(book);
-            }
-
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Book deleted successfully!";
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool BookExists(int id)
-        {
-            return (_context.Books?.Any(e => e.BookID == id)).GetValueOrDefault();
+            var sil = _db.Books.Find(id);
+            _db.Books.Remove(sil);
+            _db.SaveChanges();
+            return RedirectToAction("Index");
         }
     }
 }
+   
